@@ -1,0 +1,1114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CDI Marger Lite</title>
+
+<style>
+:root {
+  --ink:#17212b;
+  --muted:#667085;
+  --line:#d0d5dd;
+  --blue:#245ea8;
+  --bg:#f4f6f9;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+header {
+  background:white;
+  border-bottom:1px solid var(--line);
+  padding:16px 22px;
+}
+header h1 { margin:0; font-size:24px; }
+header p { margin:6px 0 0; color:var(--muted); font-size:13px; }
+main { max-width:1500px; margin:auto; padding:16px; }
+
+.top-controls,.panel {
+  background:white;
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:13px;
+}
+.top-controls {
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:end;
+  margin-bottom:14px;
+}
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:12px; font-weight:700; }
+input { font:inherit; }
+input[type=number] {
+  width:105px;
+  padding:8px;
+  border:1px solid #b8c1cc;
+  border-radius:5px;
+  background:white;
+}
+.checkline {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-height:35px;
+  font-size:12px;
+  font-weight:700;
+}
+button {
+  border:0;
+  border-radius:5px;
+  padding:9px 12px;
+  background:var(--blue);
+  color:white;
+  font-weight:700;
+  cursor:pointer;
+}
+button.secondary {
+  background:#e8edf4;
+  color:#243447;
+  border:1px solid #cbd5e1;
+}
+button.danger {
+  background:#fff0f0;
+  color:#a12626;
+  border:1px solid #f0caca;
+}
+button:disabled { opacity:.45; cursor:not-allowed; }
+
+.workspace {
+  display:grid;
+  grid-template-columns:minmax(0,1.6fr) minmax(280px,.9fr);
+  gap:14px;
+  align-items:start;
+}
+.panel { min-width:0; }
+.panel h2 { font-size:16px; margin:0 0 12px; }
+.canvas-wrap {
+  width:100%;
+  background:#f9fafb;
+  border:1px dashed #c6ced8;
+  border-radius:7px;
+  padding:8px;
+  display:flex;
+  justify-content:center;
+  overflow:hidden;
+}
+#plateCanvas {
+  display:block;
+  width:100%;
+  height:auto;
+  background:white;
+  touch-action:none;
+  cursor:crosshair;
+}
+.hint {
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+  margin:10px 0 0;
+}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin-top:12px;
+}
+.stat { background:#f3f6fa; border-radius:6px; padding:9px; }
+.stat span { display:block; font-size:11px; color:var(--muted); margin-bottom:5px; }
+.stat strong { font-size:15px; }
+.design-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+}
+#designList { display:flex; flex-direction:column; gap:9px; }
+.design-tray { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:7px; margin-top:10px; }
+.tray-card { min-width:0; border:1px solid #b8c7dc; border-radius:7px; padding:6px; background:#f8fbff; cursor:grab; user-select:none; touch-action:none; }
+.tray-card:active { cursor:grabbing; }
+.tray-card.is-dragging { opacity:.55; border-color:#245ea8; }
+.tray-preview { width:90px; height:90px; max-width:100%; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; border:1px solid #333; border-radius:3px; overflow:hidden; text-align:center; padding:4px; }
+.tray-preview span { font-size:10px; font-weight:700; overflow-wrap:anywhere; }
+.tray-meta { font-size:11px; line-height:1.45; text-align:center; overflow-wrap:anywhere; }
+.tray-title { font-weight:700; } 
+#plateCanvas.drop-target { outline:3px solid #245ea8; outline-offset:-4px; }
+.design-row {
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:9px;
+}
+.design-row.active { border-color:var(--blue); }
+.design-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  margin-bottom:8px;
+  font-size:13px;
+  font-weight:700;
+}
+.swatch {
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border:1px solid #333;
+  border-radius:3px;
+  margin-right:5px;
+  vertical-align:middle;
+}
+.row-fields {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.row-fields input { width:100%; min-width:0; padding:7px 4px; }
+.row-fields label { font-size:10px; }
+.row-actions,.actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px;
+}
+.row-actions button { padding:6px 8px; font-size:11px; }
+#message {
+  margin-top:12px;
+  padding:10px;
+  border-radius:6px;
+  font-size:12px;
+  line-height:1.5;
+  display:none;
+}
+#message.info { display:block; background:#eef5ff; color:#214b80; }
+#message.warn { display:block; background:#fff6e5; color:#805200; }
+#message.error { display:block; background:#fff0f0; color:#992b2b; }
+footer {
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  padding:18px 10px;
+  margin-top:8px;
+}
+@media(max-width:850px) {
+  main { padding:9px; }
+  .workspace { grid-template-columns:1fr; }
+  header { padding:14px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>CDI MARGER LITE</h1>
+  <p>Row plate planning tool · Dimensions in millimetres (mm)</p>
+</header>
+
+<main>
+  <section class="top-controls">
+    <div class="field">
+      <label for="rawW">Raw plate width (horizontal)</label>
+      <input id="rawW" type="number" min="1" max="900" step="0.1" value="900">
+    </div>
+    <div class="field">
+      <label for="rawH">Raw plate height (vertical)</label>
+      <input id="rawH" type="number" min="1" max="1184.5" step="0.1" value="1184.5">
+    </div>
+    <label class="checkline">
+      <input id="standardSize" type="checkbox" checked>
+      Standard 900 × 1184.5
+    </label>
+    <button id="applyRaw">Apply raw size</button>
+
+    <div class="field">
+      <label for="marginTop">Top margin (mm)</label>
+      <input id="marginTop" type="number" min="0" step="0.1" value="30">
+    </div>
+    <div class="field">
+      <label for="marginBottom">Bottom margin (mm)</label>
+      <input id="marginBottom" type="number" min="0" step="0.1" value="5">
+    </div>
+    <div class="field">
+      <label for="marginLeft">Left margin (mm)</label>
+      <input id="marginLeft" type="number" min="0" step="0.1" value="5">
+    </div>
+    <div class="field">
+      <label for="marginRight">Right margin (mm)</label>
+      <input id="marginRight" type="number" min="0" step="0.1" value="5">
+    </div>
+    <label class="checkline">
+      <input id="cutMarks" type="checkbox">
+      Enable Cutting Marks
+    </label>
+    <button id="applySettings" class="secondary">Apply settings</button>
+  </section>
+
+  <section class="workspace">
+    <div class="panel">
+      <h2>Raw plate visual layout</h2>
+      <div class="canvas-wrap">
+        <canvas id="plateCanvas" aria-label="Raw plate layout"></canvas>
+      </div>
+      <p class="hint">
+        Select and drag a customer plate to move it. Use Rotate 90° to change
+        orientation. Plates and cutting marks must stay inside the allowed area.
+        Blue dashed lines indicate the safety margins.
+      </p>
+      <div class="stats">
+        <div class="stat">
+          <span>Customer plates placed</span>
+          <strong id="placedCount">0 / 0</strong>
+        </div>
+        <div class="stat">
+          <span>Used area</span>
+          <strong id="usedArea">0%</strong>
+        </div>
+        <div class="stat">
+          <span>Unused area estimate</span>
+          <strong id="wasteArea">100%</strong>
+        </div>
+      </div>
+      <div id="message" role="status"></div>
+    </div>
+
+    <aside class="panel">
+      <div class="design-head">
+        <h2 style="margin:0">Customer plates</h2>
+        <button id="addDesign" class="secondary">+ Add size</button>
+      </div>
+      <div id="designList"></div>
+      <div class="actions">
+        <button id="autoArrange">Auto arrange</button>
+        <button id="rotateSelected" class="secondary">Rotate selected 90°</button>
+        <button id="resetLayout" class="secondary">Reset layout</button>
+      </div>
+      <p class="hint">
+        Add a customer size and enter its actual width, height and quantity. Each copy appears below as a standard-size preview with its actual dimensions and serial number (for example, Design 1 1). Drag a preview onto the raw plate to place it manually, or use Auto arrange. Previews are not drawn to scale; placed plates use their actual dimensions. Verify the layout before production.
+      </p>
+    </aside>
+  </section>
+</main>
+
+<footer>Developed by Hamza Bashir © 2026</footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const colors = [
+    '#dceafe','#fce7d6','#d9f3e4','#f2def8','#fff0b8',
+    '#d8f0f2','#f8dce3','#e5e7eb','#e4e0ff','#e8f4d0'
+  ];
+
+  let rawW = 900, rawH = 1184.5;
+  let designs = [], placed = [], selectedId = null, nextId = 1;
+  let dragging = null, draggingTray = null, trayPointer = null, dragPreviewPosition = null, canvasScale = 1, pad = 34;
+
+  const canvas = $('plateCanvas');
+  const ctx = canvas.getContext('2d');
+  const markArm = 0.5;
+  const markThickness = 0.5;
+
+  function showMessage(text, type='info') {
+    const el = $('message');
+    el.textContent = text;
+    el.className = type;
+  }
+
+  function validNum(v) {
+    return Number.isFinite(Number(v)) && Number(v) > 0;
+  }
+
+  function fmt(n) {
+    return Number(n.toFixed(1)).toString();
+  }
+
+  function totalRequested() {
+    return designs.reduce((s,d) => s + d.qty, 0);
+  }
+
+  function margins() {
+    return {
+      top:Number($('marginTop').value),
+      bottom:Number($('marginBottom').value),
+      left:Number($('marginLeft').value),
+      right:Number($('marginRight').value)
+    };
+  }
+
+  function itemDimensions(p) {
+    return p.rotated ? {w:p.h,h:p.w} : {w:p.w,h:p.h};
+  }
+
+  // Reserve space for the outside cutting marks when they are enabled.
+  function clearance() {
+    return $('cutMarks').checked ? markArm : 0;
+  }
+
+  function boundsFor(p,x=p.x,y=p.y) {
+    const d = itemDimensions(p);
+    const c = clearance();
+    return {left:x-c, top:y-c, right:x+d.w+c, bottom:y+d.h+c};
+  }
+
+  function overlaps(a,b) {
+    const A = boundsFor(a);
+    const B = boundsFor(b);
+    return A.left < B.right - 0.001 &&
+           A.right > B.left + 0.001 &&
+           A.top < B.bottom - 0.001 &&
+           A.bottom > B.top + 0.001;
+  }
+
+  function canPlace(p,x,y,ignoreId=null) {
+    const d = itemDimensions(p);
+    const m = margins();
+    const c = clearance();
+
+    if (![m.top,m.bottom,m.left,m.right].every(v =>
+      Number.isFinite(v) && v >= 0)) return false;
+
+    if (x-c < m.left-0.001 ||
+        y-c < m.top-0.001 ||
+        x+d.w+c > rawW-m.right+0.001 ||
+        y+d.h+c > rawH-m.bottom+0.001) return false;
+
+    const test = {...p,x,y};
+    return !placed.some(other =>
+      other.id !== ignoreId && overlaps(test,other));
+  }
+
+  function makeInstances() {
+    const arr = [];
+    designs.forEach(d => {
+      for(let i=0; i<d.qty; i++) {
+        arr.push({
+          id:`p${d.id}_${i+1}`,
+          designId:d.id,
+          w:d.w, h:d.h, rotated:false,
+          x:0, y:0, color:d.color,
+          label:`${d.name} ${i+1}`
+        });
+      }
+    });
+    return arr;
+  }
+
+  
+function findSpot(p) {
+    const m = margins();
+    const c = clearance();
+    const step = 5;
+
+    for (const rot of [false, true]) {
+      p.rotated = rot;
+      const d = itemDimensions(p);
+
+      const minX = m.left + c;
+      const maxX = rawW - m.right - c - d.w;
+      const minY = m.top + c;
+      const maxY = rawH - m.bottom - c - d.h;
+
+      if (maxX < minX || maxY < minY) continue;
+
+      // Search from bottom to top, and left to right.
+      for (let y = maxY; y >= minY; y -= step) {
+        for (let x = minX; x <= maxX; x += step) {
+          if (canPlace(p, x, y)) {
+            return {
+              x: Math.round(x * 100) / 100,
+              y: Math.round(y * 100) / 100,
+              rotated: rot
+            };
+          }
+        }
+      }
+
+      // Check the exact boundaries too.
+      const edgeCandidates = [
+        { x: minX, y: minY },
+        { x: maxX, y: minY },
+        { x: minX, y: maxY },
+        { x: maxX, y: maxY }
+      ];
+
+      for (const pos of edgeCandidates) {
+        if (canPlace(p, pos.x, pos.y)) {
+          return { ...pos, rotated: rot };
+        }
+      }
+    }
+
+    return null;
+}
+
+  function autoArrange() {
+    placed = [];
+    const all = makeInstances().sort((a,b) =>
+      Math.max(b.w,b.h)-Math.max(a.w,a.h) || b.w*b.h-a.w*a.h);
+
+    let failed = 0;
+    all.forEach(p => {
+      const spot = findSpot(p);
+      if(spot) placed.push({...p,...spot});
+      else failed++;
+    });
+
+    selectedId = placed[0]?.id || null;
+    renderDesigns();
+    draw();
+
+    if(failed) {
+      showMessage(
+        `${placed.length} of ${all.length} plates placed. ${failed} could not fit. Try changing the raw plate size, margins, quantities or orientation.`,
+        'warn'
+      );
+    } else if(all.length) {
+      showMessage(`All ${all.length} customer plates arranged. Review the layout before production.`, 'info');
+    } else {
+      showMessage('No customer plates added yet. Click + Add size to begin.', 'info');
+    }
+  }
+
+  function readDesignRows() {
+    for(const d of designs) {
+      const w = $(`w${d.id}`);
+      const h = $(`h${d.id}`);
+      const q = $(`q${d.id}`);
+      if(!w || !h || !q) continue;
+
+      const nw = Number(w.value);
+      const nh = Number(h.value);
+      const nq = Number(q.value);
+
+      if(!validNum(nw) || !validNum(nh) ||
+         !Number.isInteger(nq) || nq<1 || nq>500) {
+        showMessage(
+          `${d.name}: enter positive width and height, and quantity from 1 to 500.`,
+          'error'
+        );
+        return false;
+      }
+      d.w=nw; d.h=nh; d.qty=nq;
+    }
+
+    if(totalRequested()>1000) {
+      showMessage('Total quantity is limited to 1,000 plates in this Lite version.','error');
+      return false;
+    }
+    return true;
+  }
+
+  function renderDesigns() {
+    const list = $('designList');
+    list.innerHTML = '';
+
+    if(!designs.length) {
+      const empty = document.createElement('p');
+      empty.className = 'hint';
+      empty.textContent = 'No customer sizes yet. Click + Add size to start.';
+      list.appendChild(empty);
+    }
+
+    designs.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'design-row' +
+        (placed.some(p=>p.id===selectedId && p.designId===d.id) ? ' active' : '');
+
+      const title = document.createElement('div');
+      title.className = 'design-title';
+
+      const name = document.createElement('span');
+      const swatch = document.createElement('span');
+      swatch.className = 'swatch';
+      swatch.style.background = d.color;
+      name.append(swatch, document.createTextNode(d.name));
+
+      const remove = document.createElement('button');
+      remove.className = 'danger';
+      remove.textContent = 'Remove';
+      remove.type = 'button';
+      remove.addEventListener('click', () => {
+        designs = designs.filter(x => x.id !== d.id);
+        placed = placed.filter(p => p.designId !== d.id);
+        if(!placed.some(p=>p.id===selectedId)) selectedId=placed[0]?.id||null;
+        renderDesigns();
+        draw();
+        showMessage(`${d.name} removed.`, 'info');
+      });
+
+      title.append(name,remove);
+      row.appendChild(title);
+
+      const fields = document.createElement('div');
+      fields.className = 'row-fields';
+
+      [
+        ['Width (mm)','w',d.w],
+        ['Height (mm)','h',d.h],
+        ['Quantity','q',d.qty]
+      ].forEach(([labelText,prefix,value]) => {
+        const field = document.createElement('div');
+        field.className = 'field';
+        const label = document.createElement('label');
+        label.htmlFor = `${prefix}${d.id}`;
+        label.textContent = labelText;
+        const input = document.createElement('input');
+        input.id = `${prefix}${d.id}`;
+        input.type = 'number';
+        input.min = prefix==='q' ? '1' : '0.1';
+        input.step = prefix==='q' ? '1' : '0.1';
+        input.value = value;
+        if(prefix==='q') input.max='500';
+
+        input.addEventListener('change', () => {
+          if (readDesignRows()) {
+            placed = placed.filter(p => p.designId !== d.id);
+            if (!placed.some(p => p.id === selectedId)) selectedId = placed[0]?.id || null;
+            renderDesigns();
+            draw();
+            showMessage(`${d.name} updated. Its copies are ready in the drag-and-drop area.`, 'info');
+          }
+        });
+
+        field.append(label,input);
+        fields.appendChild(field);
+      });
+
+      row.appendChild(fields);
+
+      const tray = document.createElement('div');
+      tray.className = 'design-tray';
+      const instances = makeInstances().filter(p => p.designId === d.id && !placed.some(q => q.id === p.id));
+      if (instances.length) {
+        instances.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'tray-card';
+          card.draggable = false;
+          card.title = 'Press and hold, then drag this customer plate onto the raw plate';
+          card.addEventListener('pointerdown', e => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            draggingTray = p;
+            trayPointer = null;
+            card.classList.add('is-dragging');
+            try { card.setPointerCapture(e.pointerId); } catch (_) {}
+            updateTrayDrag(e);
+          });
+
+          const preview = document.createElement('div');
+          preview.className = 'tray-preview';
+          preview.style.background = d.color;
+          const previewText = document.createElement('span');
+          previewText.textContent = `${fmt(d.w)} × ${fmt(d.h)}`;
+          preview.appendChild(previewText);
+
+          const meta = document.createElement('div');
+          meta.className = 'tray-meta';
+          const actual = document.createElement('div');
+          actual.className = 'tray-title';
+          actual.textContent = `Actual: ${fmt(d.w)} × ${fmt(d.h)} mm`;
+          const serial = document.createElement('div');
+          serial.textContent = p.label;
+          const instruction = document.createElement('div');
+          instruction.textContent = 'Drag to raw plate';
+          instruction.style.color = '#667085';
+          meta.append(actual, serial, instruction);
+          card.append(preview, meta);
+          tray.appendChild(card);
+        });
+      } else {
+        const note = document.createElement('p');
+        note.className = 'hint';
+        note.textContent = 'All copies of this design have been placed.';
+        tray.appendChild(note);
+      }
+      row.appendChild(tray);
+      list.appendChild(row);
+    });
+  }
+
+  function addDesign() {
+    if(designs.length>=30) {
+      showMessage('Up to 30 different customer sizes can be added.','warn');
+      return;
+    }
+    const id = nextId++;
+    designs.push({
+      id,
+      name:`Design ${id}`,
+      w:200,
+      h:200,
+      qty:1,
+      color:colors[(id-1)%colors.length]
+    });
+    renderDesigns();
+    draw();
+    showMessage(`Design ${id} added. Drag its preview onto the raw plate, or use Auto arrange.`, 'info');
+  }
+
+  function drawMarks(x,y,w,h) {
+    const t = markThickness*canvasScale;
+    const arm = markArm*canvasScale;
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = Math.max(0.6,t);
+    ctx.lineCap = 'butt';
+
+    // L-shaped marks outside all four corners.
+    const corners = [
+      [x,y,1,1],
+      [x+w,y,-1,1],
+      [x,y+h,1,-1],
+      [x+w,y+h,-1,-1]
+    ];
+
+    corners.forEach(([cx,cy,dx,dy]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx+dx*arm,cy);
+      ctx.lineTo(cx,cy);
+      ctx.lineTo(cx,cy+dy*arm);
+      ctx.stroke();
+    });
+  }
+
+  function draw() {
+    const wrap = canvas.parentElement;
+    const maxWidth = Math.max(260,wrap.clientWidth-16);
+    const maxHeight = Math.max(350,window.innerHeight*0.72);
+    pad = 34;
+
+    canvasScale = Math.min(
+      (maxWidth-pad*2)/rawW,
+      (maxHeight-pad*2)/rawH
+    );
+
+    canvas.width = Math.max(260,Math.round(rawW*canvasScale+pad*2));
+    canvas.height = Math.max(350,Math.round(rawH*canvasScale+pad*2));
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = `${canvas.width}px`;
+
+    // Recalculate scale after canvas is constrained by its container.
+    canvasScale = Math.min(
+      (canvas.width-pad*2)/rawW,
+      (canvas.height-pad*2)/rawH
+    );
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const ox=pad, oy=pad, rw=rawW*canvasScale, rh=rawH*canvasScale;
+
+    ctx.fillStyle='#fff';
+    ctx.fillRect(ox,oy,rw,rh);
+    ctx.strokeStyle='#111';
+    ctx.lineWidth=1.5;
+    ctx.strokeRect(ox,oy,rw,rh);
+
+    const m=margins();
+    ctx.save();
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle='#245ea8';
+    ctx.lineWidth=1;
+    ctx.strokeRect(
+      ox+m.left*canvasScale,
+      oy+m.top*canvasScale,
+      Math.max(0,(rawW-m.left-m.right)*canvasScale),
+      Math.max(0,(rawH-m.top-m.bottom)*canvasScale)
+    );
+    ctx.restore();
+
+    placed.forEach(p => {
+      const d=itemDimensions(p);
+      const x=ox+p.x*canvasScale;
+      const y=oy+p.y*canvasScale;
+      const w=d.w*canvasScale;
+      const h=d.h*canvasScale;
+
+      if($('cutMarks').checked) drawMarks(x,y,w,h);
+
+      ctx.fillStyle=p.color;
+      ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle='#111';
+      ctx.lineWidth=1.2;
+      ctx.strokeRect(x,y,w,h);
+
+      if(p.id===selectedId) {
+        ctx.strokeStyle='#155eef';
+        ctx.lineWidth=2.5;
+        ctx.strokeRect(x+1.5,y+1.5,Math.max(0,w-3),Math.max(0,h-3));
+      }
+
+      if(w>35 && h>22) {
+        ctx.fillStyle='#17212b';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        const font=Math.max(9,Math.min(14,Math.min(w/5,h/4)));
+        ctx.font=`${font}px Arial`;
+        ctx.fillText(`${fmt(d.w)} × ${fmt(d.h)}`,x+w/2,y+h/2-5,Math.max(10,w-4));
+        ctx.font=`${Math.max(8,font-2)}px Arial`;
+        ctx.fillText(p.label,x+w/2,y+h/2+font/2,Math.max(10,w-4));
+      }
+    });
+
+    // Live ghost preview for both tray-to-plate and on-plate dragging.
+    let ghost = null, gx = 0, gy = 0, ignoreId = null;
+    if (draggingTray && trayPointer) {
+      ghost = {...draggingTray, rotated:false};
+      const rawX = (trayPointer.x-pad)/canvasScale - ghost.w/2;
+      const rawY = (trayPointer.y-pad)/canvasScale - ghost.h/2;
+      const safe = nearestValidPosition(ghost, rawX, rawY);
+      gx = safe ? safe.x : rawX;
+      gy = safe ? safe.y : rawY;
+    } else if (dragging && dragPreviewPosition) {
+      const original = placed.find(item => item.id === dragging.id);
+      if (original) {
+        ghost = {...original, x:dragPreviewPosition.x, y:dragPreviewPosition.y};
+        gx = ghost.x;
+        gy = ghost.y;
+        ignoreId = original.id;
+      }
+    }
+    if (ghost) {
+      const valid = !!nearestValidPosition(ghost, gx, gy, ignoreId);
+      const d = itemDimensions(ghost);
+      const px = ox + gx*canvasScale;
+      const py = oy + gy*canvasScale;
+      const pw = d.w*canvasScale;
+      const ph = d.h*canvasScale;
+      ctx.save();
+      ctx.globalAlpha = 0.58;
+      ctx.fillStyle = valid ? '#77d9a5' : '#ff8585';
+      ctx.fillRect(px, py, pw, ph);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = valid ? '#167647' : '#c62828';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5,3]);
+      ctx.strokeRect(px, py, pw, ph);
+      ctx.setLineDash([]);
+      if (pw > 35 && ph > 22) {
+        ctx.fillStyle = '#17212b';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`${fmt(d.w)} × ${fmt(d.h)} mm`, px+pw/2, py+ph/2-6, Math.max(10,pw-4));
+        ctx.font = '11px Arial';
+        ctx.fillText(ghost.label, px+pw/2, py+ph/2+9, Math.max(10,pw-4));
+      }
+      ctx.restore();
+    }
+
+    ctx.fillStyle='#344054';
+    ctx.font='12px Arial';
+    ctx.textAlign='center';
+    ctx.fillText(`${fmt(rawW)} mm`,ox+rw/2,15);
+    ctx.save();
+    ctx.translate(12,oy+rh/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(`${fmt(rawH)} mm`,0,0);
+    ctx.restore();
+
+    const used=placed.reduce((s,p)=>{
+      const d=itemDimensions(p);
+      return s+d.w*d.h;
+    },0);
+    const total=rawW*rawH;
+
+    $('placedCount').textContent=`${placed.length} / ${totalRequested()}`;
+    $('usedArea').textContent=`${total?(used/total*100).toFixed(1):0}%`;
+    $('wasteArea').textContent=`${total?Math.max(0,100-used/total*100).toFixed(1):100}%`;
+    $('rotateSelected').disabled=!placed.some(p=>p.id===selectedId);
+  }
+
+  function setRawSize() {
+    const w=Number($('rawW').value);
+    const h=Number($('rawH').value);
+
+    if(!validNum(w)||!validNum(h)||w>900||h>1184.5) {
+      showMessage('Raw width must be 0–900 mm and height 0–1184.5 mm.','error');
+      $('rawW').value=rawW;
+      $('rawH').value=rawH;
+      return false;
+    }
+
+    rawW=w;
+    rawH=h;
+    return true;
+  }
+
+  function applySettings() {
+    const m=margins();
+    if(!Object.values(m).every(v=>Number.isFinite(v)&&v>=0)) {
+      showMessage('All margins must be zero or greater.','error');
+      return;
+    }
+    if(m.left+m.right>=rawW || m.top+m.bottom>=rawH) {
+      showMessage('The combined margins must be smaller than the raw plate dimensions.','error');
+      return;
+    }
+    if(!setRawSize()) return;
+    if(!readDesignRows()) return;
+    autoArrange();
+  }
+
+  $('standardSize').addEventListener('change',() => {
+    if($('standardSize').checked) {
+      $('rawW').value=900;
+      $('rawH').value=1184.5;
+      setRawSize();
+      applySettings();
+    }
+  });
+
+  $('rawW').addEventListener('input',() => {
+    if(Number($('rawW').value)!==900) $('standardSize').checked=false;
+  });
+  $('rawH').addEventListener('input',() => {
+    if(Number($('rawH').value)!==1184.5) $('standardSize').checked=false;
+  });
+
+  $('applyRaw').addEventListener('click',applySettings);
+  $('applySettings').addEventListener('click',applySettings);
+  $('addDesign').addEventListener('click',() => {
+    if(readDesignRows()) addDesign();
+  });
+  $('autoArrange').addEventListener('click',() => {
+    if(readDesignRows()) autoArrange();
+  });
+  $('resetLayout').addEventListener('click',() => {
+    if(readDesignRows()) autoArrange();
+  });
+
+  $('cutMarks').addEventListener('change',() => {
+    if(readDesignRows()) autoArrange();
+  });
+
+  $('rotateSelected').addEventListener('click',() => {
+    const p=placed.find(x=>x.id===selectedId);
+    if(!p) return;
+    const next={...p,rotated:!p.rotated};
+    if(canPlace(next,p.x,p.y,p.id)) {
+      p.rotated=next.rotated;
+      draw();
+      showMessage(`${p.label} rotated 90°.`, 'info');
+    } else {
+      showMessage('This plate cannot rotate here without crossing a margin or overlapping another plate. Move it first.','warn');
+    }
+  });
+
+  function pointFromEvent(e) {
+    const rect=canvas.getBoundingClientRect();
+    return {
+      x:(e.clientX-rect.left)*(canvas.width/rect.width),
+      y:(e.clientY-rect.top)*(canvas.height/rect.height)
+    };
+  }
+
+  function hitTest(pt) {
+    const x=(pt.x-pad)/canvasScale;
+    const y=(pt.y-pad)/canvasScale;
+    for(let i=placed.length-1;i>=0;i--) {
+      const p=placed[i],d=itemDimensions(p);
+      if(x>=p.x&&x<=p.x+d.w&&y>=p.y&&y<=p.y+d.h) return p;
+    }
+    return null;
+  }
+
+  function clampToAllowedArea(p, x, y) {
+    const d = itemDimensions(p);
+    const m = margins();
+    const c = clearance();
+    const minX = m.left + c;
+    const minY = m.top + c;
+    const maxX = rawW - m.right - c - d.w;
+    const maxY = rawH - m.bottom - c - d.h;
+    if (maxX < minX || maxY < minY) return null;
+    return {
+      x: Math.min(maxX, Math.max(minX, x)),
+      y: Math.min(maxY, Math.max(minY, y))
+    };
+  }
+
+  // Keep a dragged plate inside the raw plate and find a nearby legal spot
+  // instead of allowing it to overlap another customer plate.
+  function nearestValidPosition(p, x, y, ignoreId = null) {
+    const clamped = clampToAllowedArea(p, x, y);
+    if (!clamped) return null;
+    if (canPlace(p, clamped.x, clamped.y, ignoreId)) return clamped;
+
+    const candidates = [];
+    const add = (cx, cy) => {
+      const pos = clampToAllowedArea(p, cx, cy);
+      if (!pos) return;
+      if (!candidates.some(v => Math.abs(v.x-pos.x)<0.01 && Math.abs(v.y-pos.y)<0.01)) candidates.push(pos);
+    };
+
+    // Try positions immediately beside existing plates first.
+    const d = itemDimensions(p);
+    const gap = clearance() * 2;
+    for (const other of placed) {
+      if (other.id === ignoreId) continue;
+      const od = itemDimensions(other);
+      add(other.x - d.w - gap, clamped.y);
+      add(other.x + od.w + gap, clamped.y);
+      add(clamped.x, other.y - d.h - gap);
+      add(clamped.x, other.y + od.h + gap);
+      add(other.x - d.w - gap, other.y);
+      add(other.x + od.w + gap, other.y);
+      add(other.x, other.y - d.h - gap);
+      add(other.x, other.y + od.h + gap);
+    }
+
+    // Small local search keeps movement predictable and responsive.
+    const step = 5;
+    for (let radius = step; radius <= 100; radius += step) {
+      add(clamped.x-radius, clamped.y);
+      add(clamped.x+radius, clamped.y);
+      add(clamped.x, clamped.y-radius);
+      add(clamped.x, clamped.y+radius);
+      add(clamped.x-radius, clamped.y-radius);
+      add(clamped.x+radius, clamped.y-radius);
+      add(clamped.x-radius, clamped.y+radius);
+      add(clamped.x+radius, clamped.y+radius);
+    }
+
+    candidates.sort((a,b) => {
+      const da = (a.x-clamped.x)**2 + (a.y-clamped.y)**2;
+      const db = (b.x-clamped.x)**2 + (b.y-clamped.y)**2;
+      return da-db;
+    });
+    return candidates.find(pos => canPlace(p, pos.x, pos.y, ignoreId)) || null;
+  }
+
+  function updateTrayDrag(e) {
+    if (!draggingTray) return;
+    const rect = canvas.getBoundingClientRect();
+    const insideCanvas = e.clientX >= rect.left && e.clientX <= rect.right &&
+                         e.clientY >= rect.top && e.clientY <= rect.bottom;
+    trayPointer = insideCanvas ? pointFromEvent(e) : null;
+    canvas.classList.toggle('drop-target', insideCanvas);
+    draw();
+  }
+
+  window.addEventListener('pointermove', e => {
+    if (draggingTray) updateTrayDrag(e);
+  }, { passive: true });
+
+  window.addEventListener('pointerup', e => {
+    if (!draggingTray) return;
+    const rect = canvas.getBoundingClientRect();
+    const insideCanvas = e.clientX >= rect.left && e.clientX <= rect.right &&
+                         e.clientY >= rect.top && e.clientY <= rect.bottom;
+    const p = {...draggingTray, rotated:false};
+    const pt = insideCanvas ? pointFromEvent(e) : null;
+    let placedOk = false;
+
+    if (pt) {
+      const rawX = (pt.x - pad) / canvasScale - p.w / 2;
+      const rawY = (pt.y - pad) / canvasScale - p.h / 2;
+      const safe = nearestValidPosition(p, rawX, rawY);
+      if (safe) {
+        p.x = safe.x;
+        p.y = safe.y;
+        placed.push(p);
+        selectedId = p.id;
+        placedOk = true;
+      }
+    }
+
+    draggingTray = null;
+    trayPointer = null;
+    canvas.classList.remove('drop-target');
+    document.querySelectorAll('.tray-card.is-dragging').forEach(card => card.classList.remove('is-dragging'));
+    if (placedOk) {
+      renderDesigns();
+      draw();
+      showMessage(`${p.label} placed at ${fmt(p.w)} × ${fmt(p.h)} mm.`, 'info');
+    } else {
+      draw();
+      if (insideCanvas) showMessage('This plate does not fit at that position or overlaps another plate. Try another spot.', 'warn');
+    }
+  });
+
+  window.addEventListener('pointercancel', () => {
+    if (!draggingTray) return;
+    draggingTray = null;
+    trayPointer = null;
+    canvas.classList.remove('drop-target');
+    document.querySelectorAll('.tray-card.is-dragging').forEach(card => card.classList.remove('is-dragging'));
+    draw();
+  });
+
+  canvas.addEventListener('pointerdown',e => {
+    const pt=pointFromEvent(e),p=hitTest(pt);
+    if(!p) {
+      selectedId=null;
+      renderDesigns();
+      draw();
+      return;
+    }
+    selectedId=p.id;
+    dragging={
+      id:p.id,
+      offsetX:(pt.x-pad)/canvasScale-p.x,
+      offsetY:(pt.y-pad)/canvasScale-p.y,
+      startX:p.x,
+      startY:p.y
+    };
+    dragPreviewPosition={x:p.x,y:p.y};
+    canvas.setPointerCapture(e.pointerId);
+    renderDesigns();
+    draw();
+  });
+
+  canvas.addEventListener('pointermove',e => {
+    if(!dragging) return;
+    const pt=pointFromEvent(e);
+    const p=placed.find(x=>x.id===dragging.id);
+    if(!p) return;
+    const rawX=(pt.x-pad)/canvasScale-dragging.offsetX;
+    const rawY=(pt.y-pad)/canvasScale-dragging.offsetY;
+    const safe=nearestValidPosition(p,rawX,rawY,p.id);
+    if(safe) dragPreviewPosition=safe;
+    draw();
+  });
+
+  canvas.addEventListener('pointerup',e => {
+    if(!dragging) return;
+    const p=placed.find(x=>x.id===dragging.id);
+    const releasedOverTray = document.elementFromPoint(e.clientX,e.clientY)?.closest('.design-tray');
+    if (p && releasedOverTray) {
+      placed = placed.filter(item => item.id !== p.id);
+      dragging=null;
+      dragPreviewPosition=null;
+      selectedId=null;
+      renderDesigns();
+      draw();
+      showMessage(`${p.label} returned to its design tray.`, 'info');
+      return;
+    }
+    let moved=false;
+    if(p && dragPreviewPosition && canPlace(p,dragPreviewPosition.x,dragPreviewPosition.y,p.id)) {
+      p.x=Math.round(dragPreviewPosition.x*10)/10;
+      p.y=Math.round(dragPreviewPosition.y*10)/10;
+      moved=true;
+    }
+    dragging=null;
+    dragPreviewPosition=null;
+    draw();
+    showMessage(moved ? 'Plate position updated.' : 'That position overlaps another plate. The plate stayed in its previous valid position.', moved ? 'info' : 'warn');
+  });
+
+  canvas.addEventListener('pointercancel',() => { dragging=null; dragPreviewPosition=null; draw(); });
+
+  window.addEventListener('resize',draw);
+
+  renderDesigns();
+  draw();
+  showMessage('No customer plates added yet. Click + Add size to begin.','info');
+})();
+</script>
+</body>
+</html>
